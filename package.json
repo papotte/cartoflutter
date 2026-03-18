@@ -1,0 +1,25 @@
+{
+  "name": "cartographers",
+  "version": "1.0.0",
+  "description": "A Flutter adaptation of Cartographers: A Roll Player Tale.",
+  "license": "ISC",
+  "author": "@papotte",
+  "scripts": {
+    "lint": "prettier --check . && flutter analyze",
+    "lint:prettier": "prettier --check .",
+    "lint:flutter": "flutter analyze",
+    "format": "prettier --write . && npm run format:lib",
+    "format:lib": "dart format lib test",
+    "format:check": "prettier --check .",
+    "commitlint": "commitlint --last --verbose",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.1.0",
+    "@commitlint/config-conventional": "^20.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.8.1",
+    "prettier-plugin-sh": "^0.18.0"
+  }
+}

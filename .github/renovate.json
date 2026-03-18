@@ -1,0 +1,19 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":dependencyDashboard"],
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "description": "Group Firebase / Firestore updates in one PR",
+      "groupName": "firebase",
+      "matchDatasources": ["dart"],
+      "matchPackageNames": ["cloud_firestore", "firebase_auth", "firebase_core"]
+    },
+    {
+      "description": "Group Flutter tooling (flutter_lints, flutter_test, flutter_launcher_icons, …)",
+      "groupName": "flutter-tooling",
+      "matchManagers": ["pub"],
+      "matchPackagePrefixes": ["flutter_"]
+    }
+  ]
+}

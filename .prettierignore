@@ -1,0 +1,37 @@
+# Platform-specific files
+android/
+ios/
+web/
+
+# Build outputs
+build/
+out/
+.dart_tool/
+
+# Dependencies
+Pods/
+node_modules/
+
+# IDE files
+.idea/
+
+# Lock files
+*.lock
+pubspec.lock
+Podfile.lock
+Gemfile.lock
+
+# Generated files
+lib/generated/
+**/*.g.dart
+.husky/_/
+
+# Coverage reports
+coverage/
+
+# Release artifacts
+release/
+
+# Flutter/Dart specific
+.flutter-plugins
+.flutter-plugins-dependencies

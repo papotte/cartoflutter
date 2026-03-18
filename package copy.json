@@ -1,0 +1,31 @@
+{
+  "name": "quouch_flutter",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Quouch Flutter App",
+  "scripts": {
+    "help": "node scripts/cli.js help",
+    "build": "node scripts/cli.js build",
+    "release": "node scripts/cli.js release",
+    "release:patch": "node scripts/cli.js release -- --bump patch",
+    "release:minor": "node scripts/cli.js release -- --bump minor",
+    "release:major": "node scripts/cli.js release -- --bump major",
+    "publish": "node scripts/cli.js publish",
+    "lint": "prettier --check . && flutter analyze && flutter analyze packages",
+    "lint:prettier": "prettier --check .",
+    "lint:flutter": "flutter analyze && flutter analyze packages",
+    "format": "prettier --write . && npm run format:lib",
+    "format:lib": "dart format lib test packages/**/lib packages/**/test",
+    "format:check": "prettier --check .",
+    "commitlint": "commitlint --last --verbose",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.1.0",
+    "@commitlint/config-conventional": "^20.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.8.1",
+    "prettier-plugin-sh": "^0.18.0"
+  }
+}
