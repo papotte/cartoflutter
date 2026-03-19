@@ -1,0 +1,31 @@
+# Non-draft PRs (incl. ready for review) + push to main
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    if: >
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
+    uses: ./.github/workflows/lint.yml
+
+  build:
+    if: >
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
+    uses: ./.github/workflows/build.yml
+    with:
+      build_android: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
