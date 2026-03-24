@@ -73,8 +73,7 @@ class _MapGridWidgetState extends State<MapGridWidget> {
     super.didUpdateWidget(oldWidget);
     final lostPreview =
         widget.previewShape == null || widget.previewTerrain == null;
-    final anchorSet =
-        widget.anchorRow != null && widget.anchorCol != null;
+    final anchorSet = widget.anchorRow != null && widget.anchorCol != null;
     if (lostPreview || anchorSet) {
       if (_hoverR != null || _hoverC != null) {
         setState(() {
@@ -93,8 +92,7 @@ class _MapGridWidgetState extends State<MapGridWidget> {
             ? constraints.maxWidth
             : constraints.maxHeight;
         const gap = 1.0;
-        final cellExtent =
-            (side - gap * (MapGrid.size - 1)) / MapGrid.size;
+        final cellExtent = (side - gap * (MapGrid.size - 1)) / MapGrid.size;
 
         final anchorCommitted =
             widget.anchorRow != null && widget.anchorCol != null;
@@ -107,16 +105,15 @@ class _MapGridWidgetState extends State<MapGridWidget> {
             widget.previewTerrain != null &&
             effR != null &&
             effC != null) {
-          previewCells =
-              widget.previewShape!.placedAt(effR, effC).toSet();
-          previewOk = widget.grid
-              .canPlace(widget.previewShape!, effR, effC);
+          previewCells = widget.previewShape!.placedAt(effR, effC).toSet();
+          previewOk = widget.grid.canPlace(widget.previewShape!, effR, effC);
         }
 
         final tentativePreview =
             !anchorCommitted && effR != null && effC != null;
 
-        final trackHover = !widget.readOnly &&
+        final trackHover =
+            !widget.readOnly &&
             widget.previewShape != null &&
             widget.previewTerrain != null &&
             !anchorCommitted;
@@ -125,18 +122,8 @@ class _MapGridWidgetState extends State<MapGridWidget> {
           onHover: trackHover
               ? (event) {
                   final local = event.localPosition;
-                  final r = _axisCell(
-                    local.dy,
-                    cellExtent,
-                    gap,
-                    MapGrid.size,
-                  );
-                  final c = _axisCell(
-                    local.dx,
-                    cellExtent,
-                    gap,
-                    MapGrid.size,
-                  );
+                  final r = _axisCell(local.dy, cellExtent, gap, MapGrid.size);
+                  final c = _axisCell(local.dx, cellExtent, gap, MapGrid.size);
                   _setHover(r, c);
                 }
               : null,
@@ -167,25 +154,26 @@ class _MapGridWidgetState extends State<MapGridWidget> {
                 if (inPreview && widget.previewTerrain != null) {
                   displayTerrain = widget.previewTerrain!;
                   final fillAlpha = tentativePreview ? 0.5 : 0.85;
-                  bgOverride = widget.previewTerrain!.color
-                      .withValues(alpha: fillAlpha);
+                  bgOverride = widget.previewTerrain!.color.withValues(
+                    alpha: fillAlpha,
+                  );
                   borderColor = previewOk
                       ? (tentativePreview
-                          ? Colors.green.withValues(alpha: 0.75)
-                          : Colors.green)
+                            ? Colors.green.withValues(alpha: 0.75)
+                            : Colors.green)
                       : (tentativePreview
-                          ? Colors.red.withValues(alpha: 0.75)
-                          : Colors.red);
+                            ? Colors.red.withValues(alpha: 0.75)
+                            : Colors.red);
                   borderWidth = tentativePreview ? 1.5 : 2;
                 } else {
                   displayTerrain = t;
                   if (t == TerrainType.empty && widget.grid.isRuins(r, c)) {
-                    bgOverride =
-                        TerrainType.ruins.color.withValues(alpha: 0.5);
+                    bgOverride = TerrainType.ruins.color.withValues(alpha: 0.5);
                   }
                 }
 
-                final showAnchorBadge = widget.previewShape != null &&
+                final showAnchorBadge =
+                    widget.previewShape != null &&
                     effR != null &&
                     effC != null &&
                     r == effR &&

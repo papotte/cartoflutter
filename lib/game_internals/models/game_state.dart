@@ -40,7 +40,7 @@ class GameState extends ChangeNotifier {
   final Random _random;
 
   List<PlayerState> players = [];
-  late List<ScoringCard> activeScoringCards;
+  late List<EdictAssignment> activeEdicts;
 
   GamePhase phase = GamePhase.explore;
   int seasonIndex = 0; // 0–3 = Spring–Winter
@@ -83,11 +83,23 @@ class GameState extends ChangeNotifier {
         ),
     ];
 
-    activeScoringCards = [
-      scoringCardsStackA[_random.nextInt(scoringCardsStackA.length)],
-      scoringCardsStackB[_random.nextInt(scoringCardsStackB.length)],
-      scoringCardsStackC[_random.nextInt(scoringCardsStackC.length)],
-      scoringCardsStackD[_random.nextInt(scoringCardsStackD.length)],
+    final picks = [
+      scoringForestCards[_random.nextInt(scoringForestCards.length)],
+      scoringHamletCards[_random.nextInt(scoringHamletCards.length)],
+      scoringRiverFarmlandsCards[_random.nextInt(
+        scoringRiverFarmlandsCards.length,
+      )],
+      scoringArrangementCards[_random.nextInt(scoringArrangementCards.length)],
+    ];
+    final edictOrder = [
+      ScoringStack.a,
+      ScoringStack.b,
+      ScoringStack.c,
+      ScoringStack.d,
+    ]..shuffle(_random);
+    activeEdicts = [
+      for (var i = 0; i < 4; i++)
+        EdictAssignment(card: picks[i], edict: edictOrder[i]),
     ];
 
     seasonIndex = 0;
@@ -116,6 +128,22 @@ class GameState extends ChangeNotifier {
   }
 
   Season get currentSeason => Season.values[seasonIndex];
+
+  /// Edict slots A–D in order for display.
+  List<EdictAssignment> get activeEdictsSortedByLetter =>
+      [...activeEdicts]..sort((a, b) => a.edict.index.compareTo(b.edict.index));
+
+  ScoringCard? cardForEdict(ScoringStack edict) {
+    for (final e in activeEdicts) {
+      if (e.edict == edict) return e.card;
+    }
+    return null;
+  }
+
+  bool edictScoresThisSeason(ScoringStack edict) {
+    final (a, b) = currentSeason.scoringStacks;
+    return edict == a || edict == b;
+  }
 
   int get timeThreshold => currentSeason.timeThreshold;
 
@@ -260,9 +288,9 @@ class GameState extends ChangeNotifier {
   void _applySeasonScoring() {
     phase = GamePhase.seasonEnd;
     final season = currentSeason;
-    final (stack1, stack2) = season.scoringStacks;
-    final card1 = activeScoringCards.firstWhere((c) => c.stack == stack1);
-    final card2 = activeScoringCards.firstWhere((c) => c.stack == stack2);
+    final (e1, e2) = season.scoringStacks;
+    final card1 = cardForEdict(e1)!;
+    final card2 = cardForEdict(e2)!;
 
     for (final p in players) {
       final g = p.map;
@@ -309,7 +337,10 @@ class GameState extends ChangeNotifier {
       playedAt: DateTime.now(),
       mode: config.mode,
       usedWildernessMap: config.useWildernessMap,
-      activeScoringCardNames: activeScoringCards.map((c) => c.name).toList(),
+      activeScoringCardNames: [
+        for (final s in ScoringStack.values)
+          '${s.letter}: ${cardForEdict(s)!.name}',
+      ],
       players: players.map(PlayerRecord.fromPlayerState).toList(),
       winnerName: winner.name,
     );

@@ -167,7 +167,9 @@ class GameRecord {
   final DateTime playedAt;
   final GameMode mode;
   final bool usedWildernessMap;
-  final List<String> activeScoringCardNames; // 4 card names, one per stack
+
+  /// Four strings like `A: Sentinel Wood` (edict letter + card name).
+  final List<String> activeScoringCardNames;
   final List<PlayerRecord> players;
   final String winnerName;
 

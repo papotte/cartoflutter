@@ -77,25 +77,72 @@ class AmbushCard {
 // ScoringCard
 // ---------------------------------------------------------------------------
 
+/// Physical scoring deck on the card back (rulebook): Forest, Hamlet, River &
+/// Farmlands, Arrangement. One card is drawn at random from each per game.
+enum ScoringCategory { forest, hamlet, riverFarmlands, arrangement }
+
+extension ScoringCategoryExtension on ScoringCategory {
+  String get displayName {
+    switch (this) {
+      case ScoringCategory.forest:
+        return 'Forest';
+      case ScoringCategory.hamlet:
+        return 'Hamlet';
+      case ScoringCategory.riverFarmlands:
+        return 'River & Farmlands';
+      case ScoringCategory.arrangement:
+        return 'Arrangement';
+    }
+  }
+}
+
+/// Edict labels A–D placed on the four drawn scoring cards (random assignment
+/// each game). Season cards reference which pair of edicts score each season.
 enum ScoringStack { a, b, c, d }
 
-/// A scoring card with a name, which stack it belongs to, and a pure scoring
-/// function that operates on a completed [MapGrid] snapshot.
+extension ScoringStackExtension on ScoringStack {
+  String get letter {
+    switch (this) {
+      case ScoringStack.a:
+        return 'A';
+      case ScoringStack.b:
+        return 'B';
+      case ScoringStack.c:
+        return 'C';
+      case ScoringStack.d:
+        return 'D';
+    }
+  }
+
+  String get edictLabel => 'Edict $letter';
+}
+
+/// A scoring card from one of the four category decks, plus a pure scoring
+/// function on a completed [MapGrid] snapshot.
 @immutable
 class ScoringCard {
   final String name;
   final String description;
-  final ScoringStack stack;
+  final ScoringCategory category;
   final int Function(MapGrid grid) scoreFunction;
 
   const ScoringCard({
     required this.name,
     required this.description,
-    required this.stack,
+    required this.category,
     required this.scoreFunction,
   });
 
   int score(MapGrid grid) => scoreFunction(grid);
+}
+
+/// One active scoring card with its edict slot (A–D) for the current game.
+@immutable
+class EdictAssignment {
+  final ScoringCard card;
+  final ScoringStack edict;
+
+  const EdictAssignment({required this.card, required this.edict});
 }
 
 // ---------------------------------------------------------------------------

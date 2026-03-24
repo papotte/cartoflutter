@@ -29,6 +29,7 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
   int? _anchorR;
   int? _anchorC;
   bool _saved = false;
+  bool _scoringObjectivesExpanded = false;
 
   @override
   void initState() {
@@ -88,6 +89,95 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
     size: 22,
     semanticLabel: 'Time remaining',
   );
+
+  Widget _buildScoringObjectivesPanel() {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final assignments = _game.activeEdictsSortedByLetter;
+    final (e1, e2) = _game.currentSeason.scoringStacks;
+
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: _scoringObjectivesExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() => _scoringObjectivesExpanded = expanded);
+          },
+          tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          title: Text(
+            'This season scores ${e1.letter} & ${e2.letter}',
+            style: textTheme.titleSmall?.copyWith(
+              color: scheme.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          children: [
+            for (var i = 0; i < assignments.length; i++) ...[
+              if (i > 0) const SizedBox(height: 8),
+              _buildEdictRow(context, assignments[i]),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEdictRow(BuildContext context, EdictAssignment a) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final active = _game.edictScoresThisSeason(a.edict);
+    final borderColor = active
+        ? scheme.primary
+        : scheme.outline.withValues(alpha: 0.35);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border.all(color: borderColor, width: active ? 2 : 1),
+        borderRadius: BorderRadius.circular(10),
+        color: active
+            ? scheme.primaryContainer.withValues(alpha: 0.35)
+            : scheme.surfaceContainerHighest.withValues(alpha: 0.4),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  a.edict.edictLabel,
+                  style: textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: scheme.primary,
+                  ),
+                ),
+                Text(
+                  ' · ${a.card.category.displayName}',
+                  style: textTheme.labelMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 2),
+            Text(a.card.name, style: textTheme.titleSmall),
+            const SizedBox(height: 2),
+            Text(
+              a.card.description,
+              style: textTheme.bodySmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildExploreOption(BuildContext context, CardOption o) {
     final selected = _selShape == o.shape && _selTerrain == o.terrain;
@@ -188,7 +278,17 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
           return switch (_game.phase) {
             GamePhase.explore => _buildExplore(),
             GamePhase.draw => _buildDraw(p),
-            GamePhase.check => const Center(child: CircularProgressIndicator()),
+            GamePhase.check => Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildScoringObjectivesPanel(),
+                  const SizedBox(height: 24),
+                  const CircularProgressIndicator(),
+                ],
+              ),
+            ),
             GamePhase.seasonEnd => _buildSeasonEnd(p),
             GamePhase.gameOver => _buildGameOver(),
           };
@@ -204,10 +304,7 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              'Time ${_game.accumulatedTime} / ${_game.timeThreshold}',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            _buildScoringObjectivesPanel(),
             if (_game.lastAmbushMessage != null) ...[
               const SizedBox(height: 16),
               Text(_game.lastAmbushMessage!, textAlign: TextAlign.center),
@@ -230,6 +327,8 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          _buildScoringObjectivesPanel(),
+          const SizedBox(height: 8),
           if (_game.mustOverlapRuins)
             const Card(
               color: Colors.amberAccent,
@@ -289,6 +388,9 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
 
   Widget _buildSeasonEnd(PlayerState p) {
     final last = p.seasonScores.last;
+    final (e1, e2) = last.season.scoringStacks;
+    final c1 = _game.cardForEdict(e1);
+    final c2 = _game.cardForEdict(e2);
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -300,8 +402,12 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
-          Text('Edict A: ${last.scoringCard1Stars} ★'),
-          Text('Edict B: ${last.scoringCard2Stars} ★'),
+          Text(
+            '${e1.edictLabel} (${c1?.name ?? "?"}): ${last.scoringCard1Stars} ★',
+          ),
+          Text(
+            '${e2.edictLabel} (${c2?.name ?? "?"}): ${last.scoringCard2Stars} ★',
+          ),
           Text('Coins: ${last.coinStars} ★'),
           Text('Monster penalty: −${last.monsterPenalty} ★'),
           const Divider(),
