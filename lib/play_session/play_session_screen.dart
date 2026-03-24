@@ -83,6 +83,12 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
     });
   }
 
+  Widget _seasonTimeIcon() => const Icon(
+    Icons.hourglass_top_outlined,
+    size: 22,
+    semanticLabel: 'Time remaining',
+  );
+
   Widget _buildExploreOption(BuildContext context, CardOption o) {
     final selected = _selShape == o.shape && _selTerrain == o.terrain;
     final scheme = Theme.of(context).colorScheme;
@@ -93,7 +99,9 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: selected ? scheme.primary : scheme.outline.withValues(alpha: 0.45),
+          color: selected
+              ? scheme.primary
+              : scheme.outline.withValues(alpha: 0.45),
           width: selected ? 2 : 1,
         ),
       ),
@@ -148,9 +156,25 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    final showSeasonTime = switch (_game.phase) {
+      GamePhase.explore || GamePhase.draw || GamePhase.check => true,
+      _ => false,
+    };
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(_game.currentSeason.displayName),
+        title: showSeasonTime
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(_game.currentSeason.displayName),
+                  const Text(' · '),
+                  _seasonTimeIcon(),
+                  const SizedBox(width: 4),
+                  Text('${_game.remainingSeasonTime}'),
+                ],
+              )
+            : Text(_game.currentSeason.displayName),
         actions: [
           TextButton(
             onPressed: () => context.go('/'),
@@ -214,10 +238,20 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
                 child: Text('Place on a ruins space if you can.'),
               ),
             ),
-          Text(
-            '${card.name} · +${card.timeValue} time',
-            style: Theme.of(context).textTheme.titleMedium,
-            textAlign: TextAlign.center,
+          Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(card.name, style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(width: 4),
+                const Text(' · '),
+                _seasonTimeIcon(),
+                Text(
+                  '+ ${card.timeValue}',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 8),
           Wrap(

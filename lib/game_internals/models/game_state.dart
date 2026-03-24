@@ -119,6 +119,12 @@ class GameState extends ChangeNotifier {
 
   int get timeThreshold => currentSeason.timeThreshold;
 
+  /// Season time not yet spent ([timeThreshold] minus [accumulatedTime], floored at 0).
+  int get remainingSeasonTime {
+    final r = timeThreshold - accumulatedTime;
+    return r > 0 ? r : 0;
+  }
+
   /// Reveal cards until an explore card starts the draw phase (or deck ends).
   void revealNextCard() {
     if (phase != GamePhase.explore && phase != GamePhase.check) return;
