@@ -39,23 +39,23 @@ extension TerrainTypeExtension on TerrainType {
   Color get color {
     switch (this) {
       case TerrainType.empty:
-        return const Color(0xFFF5ECD7);
+        return const Color(0xFFF2EDE6);
       case TerrainType.forest:
-        return const Color(0xFF2D7D46);
+        return const Color(0xFF355A4A);
       case TerrainType.village:
-        return const Color(0xFFE07B39);
+        return const Color(0xFFBC8034);
       case TerrainType.farm:
-        return const Color(0xFFE8D44D);
+        return const Color(0xFFD4A84A);
       case TerrainType.water:
-        return const Color(0xFF4A90D9);
+        return const Color(0xFF2274A5);
       case TerrainType.monster:
-        return const Color(0xFF7B2D8B);
+        return const Color(0xFFFF101F);
       case TerrainType.mountain:
-        return const Color(0xFF8B8B8B);
+        return const Color(0xFF7A726B);
       case TerrainType.wasteland:
-        return const Color(0xFF5C4A2A);
+        return const Color(0xFF6B563E);
       case TerrainType.ruins:
-        return const Color(0xFFBCA882);
+        return const Color(0xFFB5A088);
     }
   }
 
@@ -86,5 +86,29 @@ extension TerrainTypeExtension on TerrainType {
 
   int get index2 {
     return TerrainType.values.indexOf(this);
+  }
+
+  /// Icon shown on the map and in shape previews; null for empty cells.
+  IconData? get terrainIcon {
+    switch (this) {
+      case TerrainType.forest:
+        return Icons.park;
+      case TerrainType.village:
+        return Icons.home;
+      case TerrainType.farm:
+        return Icons.agriculture;
+      case TerrainType.water:
+        return Icons.water;
+      case TerrainType.monster:
+        return Icons.pest_control;
+      case TerrainType.mountain:
+        return Icons.landscape;
+      case TerrainType.wasteland:
+        return Icons.texture;
+      case TerrainType.ruins:
+        return Icons.castle;
+      case TerrainType.empty:
+        return null;
+    }
   }
 }

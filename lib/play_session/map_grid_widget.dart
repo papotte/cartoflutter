@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../game_internals/models/map_grid.dart';
 import '../game_internals/models/terrain_type.dart';
 import '../game_internals/models/tetromino_shape.dart';
+import 'terrain_cell_visual.dart';
 
 /// Renders the 11×11 map; optional placement preview for [anchorRow]/[anchorCol].
 class MapGridWidget extends StatelessWidget {
@@ -32,7 +33,9 @@ class MapGridWidget extends StatelessWidget {
         final side = constraints.maxWidth < constraints.maxHeight
             ? constraints.maxWidth
             : constraints.maxHeight;
-        final cell = side / MapGrid.size;
+        const gap = 1.0;
+        final cellExtent =
+            (side - gap * (MapGrid.size - 1)) / MapGrid.size;
 
         Set<(int, int)>? previewCells;
         bool previewOk = false;
@@ -46,40 +49,52 @@ class MapGridWidget extends StatelessWidget {
           height: side,
           child: GridView.builder(
             physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: MapGrid.size,
-              mainAxisSpacing: 1,
-              crossAxisSpacing: 1,
+              mainAxisSpacing: gap,
+              crossAxisSpacing: gap,
             ),
             itemCount: MapGrid.size * MapGrid.size,
             itemBuilder: (context, i) {
               final r = i ~/ MapGrid.size;
               final c = i % MapGrid.size;
               final t = grid.cellAt(r, c);
-              Color bg = t.color;
-              if (t == TerrainType.empty && grid.isRuins(r, c)) {
-                bg = TerrainType.ruins.color.withValues(alpha: 0.5);
-              }
+              final inPreview =
+                  previewCells != null && previewCells.contains((r, c));
 
-              Color? border;
-              if (previewCells != null && previewCells.contains((r, c))) {
-                bg = (previewTerrain ?? t).color.withValues(alpha: 0.85);
-                border = previewOk ? Colors.green : Colors.red;
+              late final TerrainType displayTerrain;
+              Color? bgOverride;
+              var borderColor = Colors.black26;
+              var borderWidth = 0.5;
+
+              if (inPreview && previewTerrain != null) {
+                displayTerrain = previewTerrain!;
+                bgOverride =
+                    previewTerrain!.color.withValues(alpha: 0.85);
+                borderColor = previewOk ? Colors.green : Colors.red;
+                borderWidth = 2;
+              } else {
+                displayTerrain = t;
+                if (t == TerrainType.empty && grid.isRuins(r, c)) {
+                  bgOverride =
+                      TerrainType.ruins.color.withValues(alpha: 0.5);
+                }
               }
 
               return GestureDetector(
                 onTap: readOnly || onCellTapped == null
                     ? null
                     : () => onCellTapped!(r, c),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: bg,
-                    border: Border.all(
-                      color: border ?? Colors.black26,
-                      width: border != null ? 2 : 0.5,
-                    ),
+                child: SizedBox(
+                  width: cellExtent,
+                  height: cellExtent,
+                  child: TerrainCellVisual(
+                    terrain: displayTerrain,
+                    size: cellExtent,
+                    backgroundColor: bgOverride,
+                    borderColor: borderColor,
+                    borderWidth: borderWidth,
                   ),
-                  child: Center(child: _iconFor(t, size: cell * 0.45)),
                 ),
               );
             },
@@ -87,40 +102,5 @@ class MapGridWidget extends StatelessWidget {
         );
       },
     );
-  }
-
-  Widget? _iconFor(TerrainType t, {required double size}) {
-    IconData? icon;
-    switch (t) {
-      case TerrainType.forest:
-        icon = Icons.park;
-        break;
-      case TerrainType.village:
-        icon = Icons.home;
-        break;
-      case TerrainType.farm:
-        icon = Icons.agriculture;
-        break;
-      case TerrainType.water:
-        icon = Icons.water;
-        break;
-      case TerrainType.monster:
-        icon = Icons.pest_control;
-        break;
-      case TerrainType.mountain:
-        icon = Icons.landscape;
-        break;
-      case TerrainType.wasteland:
-        icon = Icons.texture;
-        break;
-      case TerrainType.ruins:
-        icon = Icons.castle;
-        break;
-      case TerrainType.empty:
-        icon = null;
-        break;
-    }
-    if (icon == null) return null;
-    return Icon(icon, size: size, color: Colors.white70);
   }
 }

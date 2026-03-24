@@ -11,6 +11,7 @@ import '../game_internals/models/player_state.dart'
 import '../game_internals/models/terrain_type.dart';
 import '../game_internals/models/tetromino_shape.dart';
 import 'map_grid_widget.dart';
+import 'polyomino_shape_widget.dart';
 
 class PlaySessionScreen extends StatefulWidget {
   const PlaySessionScreen({super.key, this.config});
@@ -80,6 +81,43 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
       _anchorR = r;
       _anchorC = c;
     });
+  }
+
+  Widget _buildExploreOption(BuildContext context, CardOption o) {
+    final selected = _selShape == o.shape && _selTerrain == o.terrain;
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: selected ? scheme.primaryContainer : scheme.surface,
+      elevation: selected ? 1 : 0,
+      shadowColor: Colors.black26,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: selected ? scheme.primary : scheme.outline.withValues(alpha: 0.45),
+          width: selected ? 2 : 1,
+        ),
+      ),
+      child: InkWell(
+        onTap: () => _pickOption(o),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              PolyominoShapeWidget(shape: o.shape, fillTerrain: o.terrain),
+              const SizedBox(height: 8),
+              Text(
+                '${o.terrain.displayName} (${o.shape.cells.length})'
+                '${o.hasCoin ? " 🪙" : ""}',
+                style: Theme.of(context).textTheme.labelLarge,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _confirmPlacement() {
@@ -184,18 +222,10 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
           const SizedBox(height: 8),
           Wrap(
             alignment: WrapAlignment.center,
-            spacing: 8,
-            runSpacing: 8,
+            spacing: 10,
+            runSpacing: 10,
             children: [
-              for (final o in card.options)
-                ChoiceChip(
-                  label: Text(
-                    '${o.terrain.displayName} (${o.shape.cells.length})'
-                    '${o.hasCoin ? " 🪙" : ""}',
-                  ),
-                  selected: _selShape == o.shape && _selTerrain == o.terrain,
-                  onSelected: (_) => _pickOption(o),
-                ),
+              for (final o in card.options) _buildExploreOption(context, o),
             ],
           ),
           const SizedBox(height: 12),
