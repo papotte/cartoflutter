@@ -57,7 +57,7 @@ class ExploreCard {
 // AmbushCard
 // ---------------------------------------------------------------------------
 
-enum AmbushDirection { left, right }
+enum AmbushDirection { topLeft, topRight, bottomLeft, bottomRight }
 
 /// An ambush card that forces monster placement on a neighbour's map.
 @immutable

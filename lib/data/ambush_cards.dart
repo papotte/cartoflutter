@@ -6,28 +6,33 @@ final List<AmbushCard> ambushCards = [
   // Gnoll Raid – L-shape attacking from the left
   AmbushCard(
     name: 'Gnoll Raid',
-    shape: const TetrominoShape([(0, 0), (1, 0), (2, 0), (2, 1)]),
-    direction: AmbushDirection.left,
+    shape: const TetrominoShape([(0, 0), (0, 1), (1, 0), (2, 0), (2, 1)]),
+    direction: AmbushDirection.topLeft,
   ),
 
-  // Bugbear Assault – S-shape attacking from the right
+  // Bugbear Assault – two vertical pairs with a column gap; from top right
+  // [ ]   [ ]
+  // [ ]   [ ]
   AmbushCard(
     name: 'Bugbear Assault',
-    shape: const TetrominoShape([(0, 1), (0, 2), (1, 0), (1, 1)]),
-    direction: AmbushDirection.right,
+    shape: const TetrominoShape([(0, 0), (1, 0), (0, 2), (1, 2)]),
+    direction: AmbushDirection.topRight,
   ),
 
   // Kobold Onslaught – T-shape attacking from the left
   AmbushCard(
     name: 'Kobold Onslaught',
     shape: const TetrominoShape([(0, 0), (0, 1), (0, 2), (1, 1)]),
-    direction: AmbushDirection.left,
+    direction: AmbushDirection.bottomLeft,
   ),
 
-  // Goblin Attack – Z-shape attacking from the right
+  // Goblin Attack – three cells stepped down-right
+  // [ ]
+  //    [ ]
+  //       [ ]
   AmbushCard(
     name: 'Goblin Attack',
-    shape: const TetrominoShape([(0, 0), (0, 1), (1, 1), (1, 2)]),
-    direction: AmbushDirection.right,
+    shape: const TetrominoShape([(0, 0), (1, 1), (2, 2)]),
+    direction: AmbushDirection.bottomRight,
   ),
 ];

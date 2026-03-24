@@ -55,7 +55,7 @@ class GameState extends ChangeNotifier {
   /// Card players are placing this draw phase (after any ruins chain).
   ExploreCard? activeExploreCard;
 
-  /// After a Ruins reveal, the next placement must overlap ruins if possible.
+  /// After Temple Ruins / Outpost Ruins, the next terrain placement must overlap ruins if possible.
   bool mustOverlapRuins = false;
 
   /// Last ambush message for UI (solo auto-resolve).
@@ -269,6 +269,52 @@ class GameState extends ChangeNotifier {
       player.addCoins(1);
     }
 
+    mustOverlapRuins = false;
+    _afterDrawPhase();
+  }
+
+  /// When [mustOverlapRuins] is true but the chosen shape cannot overlap any
+  /// ruin square, the player may place a single 1×1 of any player terrain instead.
+  ///
+  /// Does not apply the current card option’s coin (the polyomino was not used).
+  ///
+  /// Future work: auto-offer this when the map has no ruins, or when no
+  /// ruins-overlapping placement exists, without requiring an explicit button.
+  void confirmRuinsReliefPlacement({
+    required int playerIndex,
+    required TetrominoShape forfeitedShape,
+    required TerrainType terrain,
+    required int row,
+    required int col,
+  }) {
+    if (phase != GamePhase.draw || activeExploreCard == null) {
+      throw StateError('Not in draw phase');
+    }
+    if (!mustOverlapRuins) {
+      throw StateError('Ruins overlap not required');
+    }
+    final player = players[playerIndex];
+    final map = player.map;
+    if (map.canPlaceOnRuins(forfeitedShape)) {
+      throw StateError(
+        'A placement overlapping ruins still exists for this shape',
+      );
+    }
+    if (!terrain.isPlayerPlaceable) {
+      throw StateError('Invalid terrain for ruins relief');
+    }
+    final shapeOnCard = activeExploreCard!.options.any(
+      (o) => o.shape == forfeitedShape,
+    );
+    if (!shapeOnCard) {
+      throw StateError('Shape not on current card');
+    }
+    const one = TetrominoShape([(0, 0)]);
+    if (!map.canPlace(one, row, col)) {
+      throw StateError('Illegal placement');
+    }
+    final coinsFromMountains = map.place(one, row, col, terrain);
+    player.addCoins(coinsFromMountains);
     mustOverlapRuins = false;
     _afterDrawPhase();
   }

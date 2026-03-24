@@ -43,13 +43,13 @@ extension TerrainTypeExtension on TerrainType {
       case TerrainType.forest:
         return const Color(0xFF355A4A);
       case TerrainType.village:
-        return const Color(0xFFBC8034);
+        return const Color(0xFFA72608);
       case TerrainType.farm:
         return const Color(0xFFD4A84A);
       case TerrainType.water:
         return const Color(0xFF2274A5);
       case TerrainType.monster:
-        return const Color(0xFFFF101F);
+        return const Color(0xFF8F3985);
       case TerrainType.mountain:
         return const Color(0xFF7A726B);
       case TerrainType.wasteland:

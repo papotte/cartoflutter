@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'game_internals/models/player_state.dart';
+import 'main_menu/cards_reference_screen.dart';
 import 'main_menu/main_menu_screen.dart';
 import 'play_session/play_session_screen.dart';
 import 'settings/settings_screen.dart';
@@ -37,6 +38,11 @@ final router = GoRouter(
           path: 'settings',
           builder: (context, state) =>
               const SettingsScreen(key: Key('settings')),
+        ),
+        GoRoute(
+          path: 'cards',
+          builder: (context, state) =>
+              const CardsReferenceScreen(key: Key('cards reference')),
         ),
       ],
     ),

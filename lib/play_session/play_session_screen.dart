@@ -13,6 +13,15 @@ import '../game_internals/models/tetromino_shape.dart';
 import 'map_grid_widget.dart';
 import 'polyomino_shape_widget.dart';
 
+const _kOneCell = TetrominoShape([(0, 0)]);
+
+const List<TerrainType> _kPlayerTerrains = [
+  TerrainType.forest,
+  TerrainType.village,
+  TerrainType.farm,
+  TerrainType.water,
+];
+
 class PlaySessionScreen extends StatefulWidget {
   const PlaySessionScreen({super.key, this.config});
 
@@ -31,6 +40,10 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
   bool _saved = false;
   bool _scoringObjectivesExpanded = false;
 
+  /// True after "can't overlap ruins" — player places one 1×1 with [_reliefTerrain].
+  bool _ruinsReliefMode = false;
+  TerrainType? _reliefTerrain;
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +58,9 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
 
   void _onGame() {
     if (!mounted) return;
+    if (_game.phase != GamePhase.draw) {
+      _clearSelection();
+    }
     if (_game.phase == GamePhase.gameOver && !_saved) {
       _saved = true;
       final record = _game.buildCompletedGameRecord(const Uuid().v4());
@@ -65,6 +81,8 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
     _selTerrain = null;
     _anchorR = null;
     _anchorC = null;
+    _ruinsReliefMode = false;
+    _reliefTerrain = null;
   }
 
   void _pickOption(CardOption o) {
@@ -73,15 +91,68 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
       _selTerrain = o.terrain;
       _anchorR = null;
       _anchorC = null;
+      _ruinsReliefMode = false;
+      _reliefTerrain = null;
     });
   }
 
   void _onCellTap(int r, int c) {
+    if (_ruinsReliefMode) {
+      if (_reliefTerrain == null) return;
+      setState(() {
+        _anchorR = r;
+        _anchorC = c;
+      });
+      return;
+    }
     if (_selShape == null || _selTerrain == null) return;
     setState(() {
       _anchorR = r;
       _anchorC = c;
     });
+  }
+
+  void _beginRuinsRelief() {
+    if (!_game.mustOverlapRuins || _selShape == null) return;
+    final map = _game.players.first.map;
+    if (map.canPlaceOnRuins(_selShape!)) return;
+    setState(() {
+      _ruinsReliefMode = true;
+      _reliefTerrain = null;
+      _anchorR = null;
+      _anchorC = null;
+    });
+  }
+
+  void _cancelRuinsRelief() {
+    setState(() {
+      _ruinsReliefMode = false;
+      _reliefTerrain = null;
+      _anchorR = null;
+      _anchorC = null;
+    });
+  }
+
+  void _confirmRuinsRelief() {
+    if (!_ruinsReliefMode ||
+        _selShape == null ||
+        _reliefTerrain == null ||
+        _anchorR == null ||
+        _anchorC == null) {
+      return;
+    }
+    try {
+      _game.confirmRuinsReliefPlacement(
+        playerIndex: 0,
+        forfeitedShape: _selShape!,
+        terrain: _reliefTerrain!,
+        row: _anchorR!,
+        col: _anchorC!,
+      );
+      _clearSelection();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    }
   }
 
   Widget _seasonTimeIcon() => const Icon(
@@ -179,9 +250,17 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
     );
   }
 
-  Widget _buildExploreOption(BuildContext context, CardOption o) {
+  Widget _buildExploreOption(
+    BuildContext context,
+    CardOption o, {
+    bool compactRift = false,
+  }) {
     final selected = _selShape == o.shape && _selTerrain == o.terrain;
     final scheme = Theme.of(context).colorScheme;
+    final cellSize = compactRift ? 20.0 : 22.0;
+    final textStyle = compactRift
+        ? Theme.of(context).textTheme.labelMedium
+        : Theme.of(context).textTheme.labelLarge;
     return Material(
       color: selected ? scheme.primaryContainer : scheme.surface,
       elevation: selected ? 1 : 0,
@@ -199,16 +278,25 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
         onTap: () => _pickOption(o),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: compactRift
+              ? const EdgeInsets.symmetric(horizontal: 10, vertical: 8)
+              : const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              PolyominoShapeWidget(shape: o.shape, fillTerrain: o.terrain),
-              const SizedBox(height: 8),
+              PolyominoShapeWidget(
+                shape: o.shape,
+                fillTerrain: o.terrain,
+                cellSize: cellSize,
+                gap: 2,
+              ),
+              SizedBox(height: compactRift ? 6 : 8),
               Text(
-                '${o.terrain.displayName} (${o.shape.cells.length})'
-                '${o.hasCoin ? " 🪙" : ""}',
-                style: Theme.of(context).textTheme.labelLarge,
+                compactRift
+                    ? o.terrain.displayName
+                    : '${o.terrain.displayName} (${o.shape.cells.length})'
+                          '${o.hasCoin ? " 🪙" : ""}',
+                style: textStyle,
                 textAlign: TextAlign.center,
               ),
             ],
@@ -330,13 +418,75 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
           _buildScoringObjectivesPanel(),
           const SizedBox(height: 8),
           if (_game.mustOverlapRuins)
-            const Card(
+            Card(
               color: Colors.amberAccent,
               child: Padding(
-                padding: EdgeInsets.all(8),
-                child: Text('Place on a ruins space if you can.'),
+                padding: const EdgeInsets.all(8),
+                child: Text(
+                  _ruinsReliefMode
+                      ? 'Ruins relief: choose any terrain below, tap one empty square, then confirm. '
+                            'This replaces the current card’s shape (no option coin).'
+                      : 'Use this card’s shapes and terrains. If any legal placement overlaps a ruins square, you must use one that does.',
+                ),
               ),
             ),
+          if (_game.mustOverlapRuins && !_ruinsReliefMode) ...[
+            const SizedBox(height: 8),
+            Center(
+              child: OutlinedButton(
+                onPressed:
+                    _selShape != null && !p.map.canPlaceOnRuins(_selShape!)
+                    ? _beginRuinsRelief
+                    : null,
+                child: const Text('Cannot overlap ruins — place 1×1 instead'),
+              ),
+            ),
+          ],
+          if (_game.mustOverlapRuins && _ruinsReliefMode) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Terrain for the single square:',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                for (final t in _kPlayerTerrains)
+                  ChoiceChip(
+                    label: Text(t.displayName),
+                    selected: _reliefTerrain == t,
+                    onSelected: (_) {
+                      setState(() => _reliefTerrain = t);
+                    },
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: _cancelRuinsRelief,
+                  child: const Text('Cancel'),
+                ),
+                const SizedBox(width: 12),
+                FilledButton(
+                  onPressed:
+                      _anchorR != null &&
+                          _anchorC != null &&
+                          _reliefTerrain != null
+                      ? _confirmRuinsRelief
+                      : null,
+                  child: const Text('Confirm 1×1'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+          ],
           Center(
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -353,27 +503,51 @@ class _PlaySessionScreenState extends State<PlaySessionScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              for (final o in card.options) _buildExploreOption(context, o),
-            ],
+          IgnorePointer(
+            ignoring: _ruinsReliefMode,
+            child: Opacity(
+              opacity: _ruinsReliefMode ? 0.45 : 1,
+              child: card.isRiftLands
+                  ? SizedBox(
+                      height: 112,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: card.options.length,
+                        separatorBuilder: (_, _) => const SizedBox(width: 8),
+                        itemBuilder: (context, i) => _buildExploreOption(
+                          context,
+                          card.options[i],
+                          compactRift: true,
+                        ),
+                      ),
+                    )
+                  : Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: [
+                        for (final o in card.options)
+                          _buildExploreOption(context, o),
+                      ],
+                    ),
+            ),
           ),
           const SizedBox(height: 12),
           Center(
             child: MapGridWidget(
               grid: p.map,
-              previewShape: _selShape,
-              previewTerrain: _selTerrain,
+              previewShape: _ruinsReliefMode ? _kOneCell : _selShape,
+              previewTerrain: _ruinsReliefMode ? _reliefTerrain : _selTerrain,
               anchorRow: _anchorR,
               anchorCol: _anchorC,
               onCellTapped: _onCellTap,
             ),
           ),
           const SizedBox(height: 12),
-          if (_anchorR != null &&
+          if (!_ruinsReliefMode &&
+              _anchorR != null &&
               _anchorC != null &&
               _selShape != null &&
               p.map.canPlace(_selShape!, _anchorR!, _anchorC!))
